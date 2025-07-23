@@ -4,27 +4,26 @@ from .models import OrderManagement
 from project_management.models import ProjectManagement
 from cases.models import Case
 
-
 class OrderManagementSerializer(serializers.ModelSerializer):
     total_donations = serializers.SerializerMethodField()
     project_name = serializers.SerializerMethodField()
     case_name = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = OrderManagement
         fields = [
-            'order_id',
-            'project',
-            'case',
+            'order_id', 
+            'project', 
+            'case', 
             'project_case_title',
             'project_name',
             'case_name',
-            'donation_amount',
-            'currency',
-            'sender_name',
+            'donation_amount', 
+            'currency', 
+            'sender_name', 
             'recipient_name',
-            'phone',
-            'payment_status',
+            'phone', 
+            'payment_status', 
             'created_date',
             'total_donations'
         ]
