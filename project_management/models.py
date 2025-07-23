@@ -50,6 +50,18 @@ class ProjectManagement(models.Model):
         verbose_name=_("Status")
     )
 
+    def get_total_donations(self):
+        """Calculate total donations for this project"""
+        from order_management.models import OrderManagement  # Import here to avoid circular imports
+
+        total = OrderManagement.objects.filter(
+            project=self,
+            payment_status='completed'
+        ).aggregate(
+            total=models.Sum('donation_amount')
+        )['total']
+        return float(total) if total else 0.0
+
     class Meta:
         verbose_name = _('Project')
         verbose_name_plural = _('Projects')
