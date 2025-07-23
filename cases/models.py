@@ -52,6 +52,14 @@ class Case(models.Model):
         verbose_name=_("Status")
     )
 
+    def get_total_donations(self):
+        """Calculate total donations for this case"""
+        return self.case_donations.filter(
+            payment_status='completed'
+        ).aggregate(
+            total=models.Sum('donation_amount')
+        )['total'] or 0
+
     class Meta:
         verbose_name = _('Case')
         verbose_name_plural = _('Cases')
