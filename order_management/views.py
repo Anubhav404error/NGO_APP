@@ -20,12 +20,13 @@ token_param = openapi.Parameter(
 )
 
 
+
 class OrderManagementViewSet(viewsets.ModelViewSet):
     queryset = OrderManagement.objects.all()
     serializer_class = OrderManagementSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ['get', 'post']
-
+    
     @swagger_auto_schema(
         operation_description="Create a new donation order",
         manual_parameters=[token_param],
@@ -36,24 +37,24 @@ class OrderManagementViewSet(viewsets.ModelViewSet):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-
+            
             serializer.validated_data['payment_status'] = 'completed'
             self.perform_create(serializer)
-
+            
             donation = serializer.instance
             total_donations = None
-
+            
             if donation.project:
                 total_donations = self._get_project_donations_summary(donation.project.pk)
             elif donation.case:
                 total_donations = self._get_case_donations_summary(donation.case.pk)
-
+            
             response_data = serializer.data
             response_data.update({
                 'total_donations': total_donations,
                 'donation_timestamp': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
             })
-
+            
             headers = self.get_success_headers(serializer.data)
             return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
         except Exception as e:
@@ -71,11 +72,11 @@ class OrderManagementViewSet(viewsets.ModelViewSet):
         try:
             queryset = self.filter_queryset(self.get_queryset())
             page = self.paginate_queryset(queryset)
-
+            
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
-
+            
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
         except Exception as e:
@@ -108,12 +109,12 @@ class OrderManagementViewSet(viewsets.ModelViewSet):
                 project=project,
                 payment_status='completed'
             )
-
+            
             total = donations.aggregate(
                 total_amount=Sum('donation_amount'),
                 total_donors=DbCount('sender_name', distinct=True)
             )
-
+            
             return {
                 'amount': float(total['total_amount'] or 0),
                 'currency': 'SAR',
@@ -147,12 +148,12 @@ class OrderManagementViewSet(viewsets.ModelViewSet):
                 case=case,
                 payment_status='completed'
             )
-
+            
             total = donations.aggregate(
                 total_amount=Sum('donation_amount'),
                 total_donors=DbCount('sender_name', distinct=True)
             )
-
+            
             return {
                 'amount': float(total['total_amount'] or 0),
                 'currency': 'SAR',
@@ -207,24 +208,24 @@ class OrderManagementViewSet(viewsets.ModelViewSet):
                 # Return all project donations grouped by project
                 projects = ProjectManagement.objects.all()
                 result = []
-
+                
                 for project in projects:
                     donations = OrderManagement.objects.filter(
                         project=project,
                         payment_status='completed'
                     ).order_by('-created_date')
-
+                    
                     if donations.exists():
                         serializer = self.get_serializer(donations, many=True)
                         summary = self._get_project_donations_summary(project.pk)
-
+                        
                         result.append({
                             'project_id': project.pk,
                             'project_name': project.project_name,
                             'summary': summary,
                             'donations': serializer.data
                         })
-
+                
                 return Response(result)
             else:
                 project = ProjectManagement.objects.get(pk=project_id)
@@ -232,10 +233,10 @@ class OrderManagementViewSet(viewsets.ModelViewSet):
                     project=project,
                     payment_status='completed'
                 ).order_by('-created_date')
-
+                
                 serializer = self.get_serializer(donations, many=True)
                 summary = self._get_project_donations_summary(project_id)
-
+                
                 return Response({
                     'project_id': project.pk,
                     'project_name': project.project_name,
@@ -283,24 +284,24 @@ class OrderManagementViewSet(viewsets.ModelViewSet):
                 # Return all case donations grouped by case
                 cases = Case.objects.all()
                 result = []
-
+                
                 for case in cases:
                     donations = OrderManagement.objects.filter(
                         case=case,
                         payment_status='completed'
                     ).order_by('-created_date')
-
+                    
                     if donations.exists():
                         serializer = self.get_serializer(donations, many=True)
                         summary = self._get_case_donations_summary(case.pk)
-
+                        
                         result.append({
                             'case_id': case.pk,
                             'case_name': case.case_name,
                             'summary': summary,
                             'donations': serializer.data
                         })
-
+                
                 return Response(result)
             else:
                 case = Case.objects.get(pk=case_id)
@@ -308,10 +309,10 @@ class OrderManagementViewSet(viewsets.ModelViewSet):
                     case=case,
                     payment_status='completed'
                 ).order_by('-created_date')
-
+                
                 serializer = self.get_serializer(donations, many=True)
                 summary = self._get_case_donations_summary(case_id)
-
+                
                 return Response({
                     'case_id': case.pk,
                     'case_name': case.case_name,
